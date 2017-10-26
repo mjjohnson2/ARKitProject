@@ -12,6 +12,12 @@ import ARKit
 
 class ViewController: UIViewController, ARSCNViewDelegate {
 
+    struct myCameraCoordinates {
+        var x = Float()
+        var y = Float()
+        var z = Float()
+    }
+    
     @IBOutlet var sceneView: ARSCNView!
     
     override func viewDidLoad() {
@@ -47,11 +53,44 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         sceneView.session.pause()
     }
     
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Release any cached data, images, etc that aren't in use.
+    func getCameraCoordinates(sceneView: ARSCNView) -> myCameraCoordinates {
+        let cameraTransform = sceneView.session.currentFrame?.camera.transform
+        let cameraCoordinates = MDLTransform(matrix: cameraTransform!)
+        
+        var cc = myCameraCoordinates()
+        cc.x = cameraCoordinates.translation.x
+        cc.y = cameraCoordinates.translation.y
+        cc.z = cameraCoordinates.translation.z
+        
+        return cc
     }
-
+    
+    
+    @IBAction func addShip(_ sender: Any) {
+        let shipNode = SCNNode()
+        
+        let cc = getCameraCoordinates(sceneView: sceneView)
+        shipNode.position = SCNVector3(cc.x, cc.y, cc.z)
+        guard let virtualObjectScene = SCNScene(named: "ship.scn", inDirectory: "art.scnassets") else {
+            return
+        }
+        
+        let wrapperNode = SCNNode()
+        for child in virtualObjectScene.rootNode.childNodes {
+            child.geometry?.firstMaterial?.lightingModel = .physicallyBased
+            wrapperNode.addChildNode(child)
+        }
+        shipNode.addChildNode(wrapperNode)
+        
+        sceneView.scene.rootNode.addChildNode(shipNode)
+        
+    }
+    
+    @IBAction func removeShip(_ sender: Any) {
+        sceneView.scene.rootNode.childNodes.last?.removeFromParentNode()
+        
+    }
+    
     // MARK: - ARSCNViewDelegate
     
 /*
